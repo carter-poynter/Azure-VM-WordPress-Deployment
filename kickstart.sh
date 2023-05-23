@@ -1,21 +1,55 @@
 #!/bin/bash
 
 # Update the system
-apt update
-apt upgrade -y
+sudo apt update
+sudo apt upgrade -y
 
 # Install Docker
-apt install -y docker.io
+sudo apt install -y docker.io
 
 # Start Docker service
-systemctl start docker
-systemctl enable docker
+sudo systemctl start docker
+sudo systemctl enable docker
 
-# Pull the WordPress image from Docker Hub
-docker pull wordpress
+# Install Docker Compose
+sudo apt install -y docker-compose
 
-# Run the WordPress container
-docker run -d -p 80:80 --name mywordpress -e WORDPRESS_DB_HOST=db_host -e WORDPRESS_DB_USER=db_user -e WORDPRESS_DB_PASSWORD=db_password -e WORDPRESS_DB_NAME=db_name wordpress
+# Create a directory for the WordPress project
+mkdir wordpress
+cd wordpress
 
-# Cleanup
-apt autoremove -y
+# Create the docker-compose.yml file
+cat <<EOF > docker-compose.yml
+version: '3'
+
+services:
+  db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: your_mysql_root_password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: your_wordpress_db_password
+
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    ports:
+      - 80:80
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: your_wordpress_db_password
+      WORDPRESS_DB_NAME: wordpress
+
+volumes:
+  db_data:
+EOF
+
+# Start the WordPress containers using Docker Compose
+sudo docker-compose up -d
